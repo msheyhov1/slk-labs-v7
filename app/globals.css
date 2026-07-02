@@ -15,7 +15,9 @@ html {
 body {
   margin: 0;
   min-height: 100%;
-  background: var(--color-bone);
+  /* v7: тёмное «живое поле» — на нём фиксированный canvas рисует нервную сеть,
+     контент плывёт поверх в стеклянных приборах. */
+  background: var(--color-substrate);
   color: var(--color-ink);
   font-family: var(--font-display);
   font-size: var(--text-body);
@@ -79,3 +81,29 @@ html.js [data-reveal] { opacity: 0; }
 }
 
 .signal-glow { box-shadow: 0 0 8px rgb(var(--color-signal-rgb) / 0.5); }
+
+/* ============================================================
+   v7 — стеклянные «приборы» над живой подложкой.
+   Полупрозрачны + backdrop-blur → нервная сеть просвечивает faint-текстурой.
+   ============================================================ */
+.instrument {
+  background: var(--color-bone-glass-panel);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.tile-bone {
+  background: var(--color-bone-glass-tile);
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+}
+.tile-ink {
+  background: var(--color-ink-glass-tile);
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+}
+/* нет поддержки backdrop-filter → панели становятся плотнее (читаемость важнее эффекта) */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .instrument { background: var(--color-bone); }
+  .tile-bone { background: var(--color-bone-sunken); }
+  .tile-ink { background: var(--color-ink); }
+}

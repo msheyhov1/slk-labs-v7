@@ -7,8 +7,9 @@ export function Services() {
   return (
     <section
       id="services"
+      data-scene="services"
       aria-labelledby="services-title"
-      className="bg-bone py-[clamp(72px,10vw,128px)]"
+      className="instrument py-[clamp(72px,10vw,128px)]"
     >
       <Container>
         <SectionHead index={servicesIntro.index} title={servicesIntro.title} titleId="services-title" />
@@ -21,7 +22,7 @@ export function Services() {
             <article
               key={s.n}
               data-reveal
-              className="flex flex-col gap-4 bg-bone p-[clamp(28px,3vw,40px)] transition-colors duration-[var(--dur-short)] ease-standard hover:bg-bone-sunken"
+              className="tile-bone flex flex-col gap-4 p-[clamp(28px,3vw,40px)] transition-transform duration-[var(--dur-short)] ease-out-expo will-change-transform hover:-translate-y-[3px]"
             >
               <div className="flex items-center justify-between">
                 <span className="font-mono text-[13px] tracking-[0.06em] text-ink-2">{s.n}</span>

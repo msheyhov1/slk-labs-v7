@@ -7,8 +7,9 @@ export function Manifesto() {
   return (
     <section
       id="manifesto"
+      data-scene="manifesto"
       aria-labelledby="manifesto-title"
-      className="bg-bone py-[clamp(96px,14vw,180px)]"
+      className="instrument py-[clamp(96px,14vw,180px)]"
     >
       <Container>
         <div className="mx-auto max-w-[64rem]">

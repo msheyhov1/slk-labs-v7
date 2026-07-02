@@ -6,7 +6,7 @@ export const site = {
   description: "Сайты. Боты. Автоматизация. Процессы, которые живут без вас.",
   payoff: "Студия разработки и автоматизации: сайты. боты. автоматизация.",
   locale: "ru_RU",
-  themeColor: "#F2F0E9",
+  themeColor: "#0E1114",
   keywords: ["разработка сайтов", "Telegram-боты", "автоматизация", "Next.js", "WebGL"],
 } as const;
 

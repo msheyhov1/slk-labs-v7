@@ -6,8 +6,9 @@ export function Contact() {
   return (
     <footer
       id="contact"
+      data-scene="contact"
       aria-labelledby="contact-title"
-      className="bg-bone px-[var(--gutter)] py-[clamp(72px,10vw,128px)] pb-12"
+      className="instrument px-[var(--gutter)] py-[clamp(72px,10vw,128px)] pb-12"
     >
       <div className="mx-auto w-full max-w-[var(--container-max)]">
         <Reveal className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-end gap-[clamp(40px,6vw,96px)] border-b border-hairline pb-16">
@@ -32,7 +33,7 @@ export function Contact() {
                 href={l.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-center justify-between gap-4 rounded-sm border border-hairline bg-bone px-[22px] py-[18px] no-underline transition-colors duration-[var(--dur-micro)] ease-standard hover:bg-bone-sunken"
+                className="group flex items-center justify-between gap-4 rounded-sm border border-hairline tile-bone px-[22px] py-[18px] no-underline transition-colors duration-[var(--dur-micro)] ease-standard hover:border-[color:var(--color-signal-ink)]"
               >
                 <span className="flex flex-col gap-[6px]">
                   <MonoLabel tone="ink-2">{l.label}</MonoLabel>

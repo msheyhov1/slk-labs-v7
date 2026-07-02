@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/SmoothScroll";
 import { Header } from "@/components/Header";
+import LiveSystem from "@/components/system/LiveSystem";
 import { site } from "@/lib/site";
 
 const geistSans = Geist({
@@ -52,6 +53,8 @@ export default function RootLayout({
         >
           Перейти к содержанию
         </a>
+        {/* Живая система — нервная сеть всей страницы, фиксированный слой за контентом */}
+        <LiveSystem />
         <Header />
         <SmoothScroll>{children}</SmoothScroll>
       </body>

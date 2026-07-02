@@ -7,8 +7,9 @@ export function Works() {
   return (
     <section
       id="works"
+      data-scene="works"
       aria-labelledby="works-title"
-      className="bg-ink py-[clamp(72px,10vw,128px)] text-[var(--color-ink-fg)]"
+      className="py-[clamp(72px,10vw,128px)] text-[var(--color-ink-fg)]"
     >
       <Container>
         <SectionHead
@@ -33,7 +34,7 @@ export function Works() {
               data-reveal
               href="#contact"
               aria-label={`Кейс ${c.title} — ${c.type}`}
-              className="flex flex-col bg-ink no-underline transition-colors duration-[var(--dur-short)] ease-standard hover:bg-ink-soft"
+              className="tile-ink flex flex-col no-underline transition-transform duration-[var(--dur-short)] ease-out-expo will-change-transform hover:-translate-y-[3px]"
             >
               <div className="diagonal-hatch relative flex aspect-[16/10] items-end overflow-hidden p-[18px]">
                 <span className="absolute left-[18px] top-[18px] font-mono text-[12px] tracking-[0.06em] text-signal">

@@ -9,8 +9,10 @@
 lib/site.ts             components/ui/*              app/page.tsx
 lib/content/*           components/sections/*        app/layout.tsx
 lib/cases.ts            components/hero/*            app/globals.css
-styles/tokens.css       components/{Header,Reveal,KineticText}
-lib/{gsap,motion}.ts    components/hero/network/*
+lib/scenes.ts           components/{Header,Reveal,KineticText}
+lib/scene-store.ts      components/system/*          (живая система за всем сайтом)
+styles/tokens.css       components/system/network/*
+lib/{gsap,motion}.ts
 ```
 
 Зависимости направлены **вниз→вверх** только в одну сторону: компоненты импортируют данные,
@@ -35,41 +37,62 @@ lib/{gsap,motion}.ts    components/hero/network/*
   `Reveal` проигрывает `fromTo(y:22→0, autoAlpha:0→1, ease:settle)` по ScrollTrigger, с `stagger` для гридов.
 - **Кинетический текст:** `KineticText` через SplitType бьёт на слова и оседает их по скроллу. Только манифест.
 
-## Живая сеть (сердце) — components/hero/network/
+## Живая система (хребет) — components/system/ (v7, идея A)
 
-Конвейер: **config.ts (числа) → simulation.ts (физика) → LivingNetwork.tsx (рендер)**.
+Сеть из «эффекта в герое» стала **нервной системой всей страницы**: один фиксированный canvas за
+всем контентом, который **рекоммутируется по скроллу**.
 
-- `config.ts` — единственное место тюнинга: плотность, `spring/friction/pull/clearZone/kick/breath`,
-  радиусы `influence/linkDist`, цвета, яркости линий, приглушённость зелёного.
-- `simulation.ts` — чистый класс `NetworkSimulation` (без three/react, тестируемый). Владеет
-  типизированными массивами `positions/heat/sizes/segPositions/segColors`. Метод `step(time, dt, pointer, shocks, reduced)`
-  на каждый кадр считает физику и заполняет буфер связей; обновляет `segCount`.
-- `LivingNetwork.tsx` — r3f `<Canvas>`. Создаёт `BufferGeometry`, чьи атрибуты **ссылаются прямо на
-  массивы симуляции** (без копирования). В `useFrame`: `sim.step(...)` → выставить `needsUpdate` + `setDrawRange`.
-  Курсор/клик слушаются на **window** (см. ниже), не на канвасе.
+Конвейер: **scenes.ts (что под каждую секцию) → simulation.ts (физика+формации) → SystemField.tsx (рендер)**,
+а активную сцену выбирает **useSceneDriver → scene-store**.
+
+- `lib/scenes.ts` — ДАННЫЕ сцен: на каждую секцию `surface` (для хедера) · `formation`
+  (cloud/clusters/columns/lattice/funnel) · `density` (доля видимых узлов) · `breath` · `linkDist` · `dim`
+  (интенсивность сети, чтобы за костяными панелями не спорить с текстом) · `foci`.
+- `lib/scene-store.ts` — единственный источник «где сейчас» страница. `setActiveScene(id)` зовёт драйвер;
+  `getActiveScene()` читает `SystemField` в `useFrame` (без React-ререндеров); `subscribeScene` — для хедера.
+- `components/system/useSceneDriver.ts` — на скролле/resize выбирает секцию `[data-scene]`, чей центр
+  ближе к центру вьюпорта, и пишет её в стор (rAF-троттлинг, один passive-листенер).
+- `components/system/network/config.ts` — БАЗОВЫЕ ручки (физика/радиусы/палитра/скорости рекоммутации).
+- `components/system/network/simulation.ts` — чистый класс `NetworkSimulation` (без three/react). Владеет
+  буферами `positions/heat/sizes/nodeAlpha/segPositions/segColors/segAlpha`. `setScene(scene)` пересчитывает
+  **целевую формацию** (`restTarget`) и видимость (`visTarget`); `step(...)` лерпит дома/видимость/`dim`
+  к целям и заполняет связи. Узлы мигрируют между формациями силой самой пружины.
+- `components/system/SystemField.tsx` — r3f `<Canvas>`. Геометрии **ссылаются прямо на массивы симуляции**.
+  В `useFrame`: если сменилась активная сцена → `sim.setScene` + импульс света; затем `sim.step` → `needsUpdate`.
+- `components/system/LiveSystem.tsx` — фиксированный слой `pointer-events:none -z-10` за контентом; крутит
+  драйвер (нужен и хедеру) и лениво (dynamic ssr:false) монтирует `SystemField`. Монтируется один раз в `layout`.
+
+### Подложка + стеклянные приборы
+Тело сайта — тёмное «живое поле» (`--color-substrate`), на нём canvas (alpha) рисует сеть. Секции —
+полупрозрачные приборы поверх: тёмные сцены (герой/работы) прозрачны (сеть ярко видна), светлые
+(услуги/манифест/контакт) — костяное стекло `.instrument` + `backdrop-blur` (сеть просвечивает faint,
+текст читаем). Так сеть **видна по всему сайту**, но на контентных сценах уходит на второй план (`dim`).
+
+### Палитра (контраст-закон)
+Рендер на `NormalBlending` → корректен и на тёмном, и под стеклом. Сеть на тёмной подложке ВСЕГДА светлая
+(костяная) с зелёным как свет/вспышка. Линии — собственный шейдер с **пер-сегментной альфой**, узлы — атрибут
+видимости `aAlpha`. Спокойствие контентных сцен задаётся `dim` (гасит связи и тихий зелёный), а не сменой палитры.
 
 ### Физическая модель (почему так)
-Каждый узел: пружина к «дому» (`rest`) + затухание (`friction`) → всегда **оседает в покой**.
-Лёгкое «дыхание» сдвигает цель синусом. Курсор в радиусе `influence` тянет по **sin-профилю**
-(`reach = sin(d/R·π)·pull`) — тяга **гаснет у самого курсора** и на краю, поэтому узлы тянутся, но
-**не слипаются** в точку. Вплотную (`d < clearZone·R`) добавлено мягкое отталкивание — «чистая зона».
-Клик бросает `Shock` — кольцо, толкающее узлы наружу с затуханием. Зелёный (`heat`) загорается от
-близости к курсору, скорости и импульса; в покое — только редкие «горячие» узлы тихо пульсируют.
+Каждый узел: пружина к «дому» (`rest`) + затухание (`friction`) → всегда **оседает в покой**. Дом
+**мигрирует** к `restTarget` сцены — так узлы перестраиваются в формацию плавно. Дыхание сдвигает цель
+синусом (амплитуда `breath` сцены). Курсор тянет по **sin-профилю** (гаснет у курсора и на краю → не
+слипаются), вплотную — «чистая зона». Клик/смена сцены пускают **волну света** (кольцо поднимает жар
+узлов и зажигает связи на фронте; силы не применяет).
 
 ### Почему pointer-events:none + window
-`HeroNetwork` оборачивает канвас в `pointer-events:none`, чтобы тач-скролл по герою и клики по CTA
-проходили насквозь. Поэтому r3f-события до канваса не доходят — координаты курсора берём САМИ из
-`window` `pointermove`/`pointerdown` и переводим в мировые через `getBoundingClientRect` канваса.
-(Ранняя версия читала `useThree().pointer` — он залипал в (0,0) при `pointer-events:none`; не повторять.)
+Канвас `pointer-events:none` (скролл/клики по CTA свободны) → r3f-события до него не доходят; координаты
+курсора берём из `window` `pointermove/pointerdown` и переводим в мировые через `getBoundingClientRect`.
+На тач (нет `hover: hover`) тяга/лучи выключены, но тап пускает волну.
 
 ### reduced-motion
-`simulation.step(..., reduced=true)` не двигает узлы, фиксирует «горячие», считает структуру один раз;
-`LivingNetwork` ставит `frameloop="demand"` и рендерит единственный кадр. Получается статичная сеть.
+`simulation.step(..., reduced=true)` не двигает узлы, снапит цели, считает структуру один раз; `SystemField`
+ставит `frameloop="demand"` и рендерит единственный кадр. Получается статичная структура.
 
 ## Адаптивный хедер
-`Header` (клиент) по `window.scrollY > 0.7·vh` переключает: прозрачный фон + светлый текст (поверх
-тёмного героя) ↔ костяной blur-фон + тёмный текст (поверх светлого контента). Так нет чужеродной
-светлой плашки на тёмном герое.
+`Header` (клиент) через `useSyncExternalStore` берёт `surface` активной сцены из `scene-store` (тот же
+источник, что и сеть): тёмная сцена → прозрачный фон + светлый текст; светлая → костяной blur-фон + тёмный.
+Так нет чужеродной светлой плашки на тёмных сценах, и переключение точное по секции, а не по порогу скролла.
 
 ## Фазы
 Готово 0–3. Дальше: фаза 4 — `app/api/assistant/route.ts` + `@anthropic-ai/sdk` (серверный ключ);

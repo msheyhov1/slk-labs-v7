@@ -1,15 +1,15 @@
 import { Container } from "@/components/ui/Container";
 import { MonoLabel } from "@/components/ui/MonoLabel";
 import { hero } from "@/lib/content/hero";
-import HeroNetwork from "./HeroNetwork";
 
 export function Hero() {
   return (
     <section
       id="top"
-      className="relative flex min-h-[100svh] items-center overflow-hidden bg-ink text-[var(--color-ink-fg)]"
+      data-scene="hero"
+      className="relative flex min-h-[100svh] items-center overflow-hidden text-[var(--color-ink-fg)]"
     >
-      <HeroNetwork />
+      {/* фон секции — прозрачный: за ним живая система на тёмной подложке. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"

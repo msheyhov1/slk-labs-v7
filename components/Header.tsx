@@ -1,29 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Container } from "@/components/ui/Container";
 import { nav } from "@/lib/site";
+import { getActiveScene, subscribeScene } from "@/lib/scene-store";
 
 export function Header() {
-  // прозрачный поверх тёмного героя; костяной фон — после ухода с героя
-  const [scrolled, setScrolled] = useState(false);
+  // Хедер берёт поверхность активной сцены из стора (тот же источник, что и сеть):
+  // тёмная сцена → прозрачный + светлый текст; светлая → костяное стекло + тёмный.
+  const surface = useSyncExternalStore(
+    subscribeScene,
+    () => getActiveScene().surface,
+    () => "dark" as const,
+  );
+  const dark = surface === "dark";
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > window.innerHeight * 0.7);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  const shell = scrolled
-    ? "border-hairline bg-[var(--color-bone-glass)] backdrop-blur-[14px]"
-    : "border-transparent bg-transparent";
-  const logo = scrolled ? "text-ink" : "text-[var(--color-ink-fg)]";
-  const suffix = scrolled ? "text-ink-2" : "text-[var(--color-ink-fg-3)]";
-  const dot = scrolled ? "bg-signal-ink" : "bg-signal";
-  const link = scrolled
-    ? "text-ink-2 hover:text-ink"
-    : "text-[var(--color-ink-fg-3)] hover:text-[var(--color-ink-fg)]";
+  const shell = dark
+    ? "border-transparent bg-transparent"
+    : "border-hairline bg-[var(--color-bone-glass)] backdrop-blur-[14px]";
+  const logo = dark ? "text-[var(--color-ink-fg)]" : "text-ink";
+  const suffix = dark ? "text-[var(--color-ink-fg-3)]" : "text-ink-2";
+  const dot = dark ? "bg-signal" : "bg-signal-ink";
+  const link = dark
+    ? "text-[var(--color-ink-fg-3)] hover:text-[var(--color-ink-fg)]"
+    : "text-ink-2 hover:text-ink";
 
   return (
     <header
