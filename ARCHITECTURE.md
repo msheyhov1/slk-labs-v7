@@ -95,5 +95,7 @@ lib/{gsap,motion}.ts
 Так нет чужеродной светлой плашки на тёмных сценах, и переключение точное по секции, а не по порогу скролла.
 
 ## Фазы
-Готово 0–3. Дальше: фаза 4 — `app/api/assistant/route.ts` + `@anthropic-ai/sdk` (серверный ключ);
-фаза 5 — реальные кейсы, `work/[slug]`, деплой на Vercel (выполняет владелец).
+Готово 0–3; прод — GitHub Pages (static export, `.github/workflows/deploy.yml`, basePath `/slk-labs-v7`).
+Дальше: фаза 4 — `app/api/assistant/route.ts` + `@anthropic-ai/sdk` (серверный ключ) — потребует
+серверный хостинг (например Vercel), т.к. route handler несовместим со static export; переезд с Pages —
+только по решению владельца. Фаза 5 — реальные кейсы, `work/[slug]`.

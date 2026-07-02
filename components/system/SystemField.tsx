@@ -17,6 +17,7 @@ import { NetworkSimulation, type Wave } from "./network/simulation";
 /** Сцена WebGL: геометрии поверх буферов симуляции, физика + рекоммутация в useFrame. */
 function NetField({ reduced }: { reduced: boolean }) {
   const { viewport, gl, invalidate } = useThree();
+  const setFrameloop = useThree((s) => s.setFrameloop);
   const dpr = Math.min(typeof window !== "undefined" ? window.devicePixelRatio : 1, 2);
 
   const { sim, nodeGeo, nodeMat, lineGeo, lineMat } = useMemo(() => {
@@ -24,10 +25,12 @@ function NetField({ reduced }: { reduced: boolean }) {
     sim.setScene(reduced ? DEFAULT_SCENE : getActiveScene());
 
     const nodeGeo = new THREE.BufferGeometry();
-    nodeGeo.setAttribute("position", new THREE.BufferAttribute(sim.positions, 3));
-    nodeGeo.setAttribute("aHeat", new THREE.BufferAttribute(sim.heat, 1));
+    // Динамические буферы (переливаются в GPU каждый кадр) помечаем DynamicDrawUsage,
+    // чтобы драйвер не переоценивал их размещение как статичные. aSize неизменен — статичен.
+    nodeGeo.setAttribute("position", new THREE.BufferAttribute(sim.positions, 3).setUsage(THREE.DynamicDrawUsage));
+    nodeGeo.setAttribute("aHeat", new THREE.BufferAttribute(sim.heat, 1).setUsage(THREE.DynamicDrawUsage));
     nodeGeo.setAttribute("aSize", new THREE.BufferAttribute(sim.sizes, 1));
-    nodeGeo.setAttribute("aAlpha", new THREE.BufferAttribute(sim.nodeAlpha, 1));
+    nodeGeo.setAttribute("aAlpha", new THREE.BufferAttribute(sim.nodeAlpha, 1).setUsage(THREE.DynamicDrawUsage));
     const nodeMat = new THREE.ShaderMaterial({
       uniforms: {
         uNode: { value: new THREE.Color(...sim.nodeColor([0, 0, 0])) },
@@ -43,9 +46,9 @@ function NetField({ reduced }: { reduced: boolean }) {
     });
 
     const lineGeo = new THREE.BufferGeometry();
-    lineGeo.setAttribute("position", new THREE.BufferAttribute(sim.segPositions, 3));
-    lineGeo.setAttribute("aColor", new THREE.BufferAttribute(sim.segColors, 3));
-    lineGeo.setAttribute("aLineAlpha", new THREE.BufferAttribute(sim.segAlpha, 1));
+    lineGeo.setAttribute("position", new THREE.BufferAttribute(sim.segPositions, 3).setUsage(THREE.DynamicDrawUsage));
+    lineGeo.setAttribute("aColor", new THREE.BufferAttribute(sim.segColors, 3).setUsage(THREE.DynamicDrawUsage));
+    lineGeo.setAttribute("aLineAlpha", new THREE.BufferAttribute(sim.segAlpha, 1).setUsage(THREE.DynamicDrawUsage));
     lineGeo.setDrawRange(0, 0);
     const lineMat = new THREE.ShaderMaterial({
       uniforms: {},
@@ -132,7 +135,30 @@ function NetField({ reduced }: { reduced: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useFrame((state, delta) => {
+  // Пауза рендер-цикла, когда вкладка скрыта или окно потеряло фокус — поле
+  // «замирает в покое», не тратя CPU/GPU/батарею фоном (INP/энергия).
+  useEffect(() => {
+    if (reduced) return;
+    const pause = () => setFrameloop("demand");
+    const resume = () => { setFrameloop("always"); invalidate(); };
+    const onVis = () => (document.hidden ? pause() : resume());
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("blur", pause);
+    window.addEventListener("focus", resume);
+    if (document.hidden) pause(); // монтирование в фоновой вкладке
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("blur", pause);
+      window.removeEventListener("focus", resume);
+    };
+  }, [reduced, setFrameloop, invalidate]);
+
+  // Время симуляции — собственный аккумулятор, НЕ state.clock: setFrameloop в r3f
+  // сбрасывает clock.elapsedTime в 0 на каждом pause/resume (blur/focus), и фазы
+  // дыхания сети дискретно перескакивали бы — «шорох» поля при возврате фокуса.
+  const simTime = useRef(0);
+
+  useFrame((_, delta) => {
     if (reduced) return;
     sim.setBounds(viewport.width, viewport.height);
 
@@ -147,7 +173,9 @@ function NetField({ reduced }: { reduced: boolean }) {
       lastScene.current = scene.id;
     }
 
-    sim.step(state.clock.elapsedTime, Math.min(delta, 1 / 30), pointer.current, waves.current, false);
+    const dt = Math.min(delta, 1 / 30);
+    simTime.current += dt;
+    sim.step(simTime.current, dt, pointer.current, waves.current, false);
     flush();
   });
 
@@ -159,16 +187,27 @@ function NetField({ reduced }: { reduced: boolean }) {
   );
 }
 
+/** Число узлов (N) и буферы считаются один раз в конструкторе симуляции.
+ *  При пересечении мобильного брейкпоинта (ресайз/поворот) ремоунтим NetField
+ *  через key — сеть пересоздаётся с правильным N (десктоп ↔ мобильный cap),
+ *  dispose-cleanup освобождает старые ресурсы. Внутри режима ресайз как раньше
+ *  обрабатывает setBounds без пересоздания. */
+function NetFieldSwitch({ reduced }: { reduced: boolean }) {
+  const width = useThree((s) => s.viewport.width);
+  const mode = width < NETWORK.mobileBreakpoint ? "mobile" : "desktop";
+  return <NetField key={mode} reduced={reduced} />;
+}
+
 export default function SystemField() {
   const reduced = typeof window !== "undefined" ? prefersReduced() : false;
   return (
     <Canvas
       dpr={[1, 2]}
-      gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+      gl={{ antialias: true, alpha: true }}
       camera={{ position: [0, 0, 12], fov: 45 }}
       frameloop={reduced ? "demand" : "always"}
     >
-      <NetField reduced={reduced} />
+      <NetFieldSwitch reduced={reduced} />
     </Canvas>
   );
 }

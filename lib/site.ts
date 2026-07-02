@@ -1,7 +1,9 @@
 // Единая конфигурация сайта: идентичность, навигация, контакты, SEO.
 export const site = {
   name: "SLK-labs",
-  url: "https://slk-labs.dev",
+  // Фактический прод сейчас — GitHub Pages (project-path). При переезде на свой
+  // домен поменять ЭТУ строку (og:image/canonical/sitemap/robots подтянутся).
+  url: "https://msheyhov1.github.io/slk-labs-v7",
   title: "SLK-labs — Процессы, которые живут без вас.",
   description: "Сайты. Боты. Автоматизация. Процессы, которые живут без вас.",
   payoff: "Студия разработки и автоматизации: сайты. боты. автоматизация.",

@@ -42,10 +42,12 @@
 - **GSAP** + **ScrollTrigger** (+ `CustomEase` для паритета с CSS-easing) — основная анимация
 - **Lenis** — плавный скролл
 - **SplitType** — кинетический текст (альтернатива: GSAP SplitText)
-- **three** + **@react-three/fiber** + **@react-three/drei** — живая сеть (фаза 3)
+- **three** + **@react-three/fiber** — живая сеть (фаза 3)
 - **@anthropic-ai/sdk** — серверный AI-ассистент (фаза 4), только в route handler
 - **Контент кейсов** — локальные данные в `lib/cases.ts` (при росте → MDX)
-- **Хостинг:** Vercel
+- **Хостинг:** GitHub Pages (static export, `.github/workflows/deploy.yml`), прод —
+  https://msheyhov1.github.io/slk-labs-v7/. Остаёмся на Pages, пока владелец сам не решит переносить.
+  Vercel — только будущий вариант для фазы 4: серверный route handler несовместим со static export.
 
 ---
 
@@ -103,7 +105,7 @@ slk-labs/
 │   │       ├── shaders.ts    #     GLSL узлов + линий (NormalBlending, пер-сегментная альфа)
 │   │       └── simulation.ts #     чистая физика+формации (без three/react), владеет буферами
 │   ├── sections/             # Works ← lib/cases · Services/Manifesto ← lib/content · Contact ← lib/content
-│   └── ui/                   # Container · MonoLabel · Hairline · Button · SectionHead (серверные примитивы)
+│   └── ui/                   # Container · MonoLabel · SectionHead (серверные примитивы)
 ├── lib/
 │   ├── site.ts               # идентичность, nav, contacts, SEO
 │   ├── scenes.ts             # ДАННЫЕ сцен: формация/плотность/dim/surface на каждую секцию
@@ -130,7 +132,9 @@ slk-labs/
 - `styles/tokens.css`  →  (Tailwind `@theme` генерит утилиты `bg-bone`/`text-ink`/`text-h2`/`ease-out-expo`… + CSS-vars `var(--…)`)  →  используется во ВСЕХ компонентах. Вторая правда запрещена.
 - `app/layout.tsx`  →  `SmoothScroll` (Lenis) + `Header` + метаданные из `lib/site`.
 - `SmoothScroll` / `Reveal` / `KineticText`  →  `lib/gsap` (плагины, `prefersReduced`) + `lib/motion` (easing/длительности). CSS-easing ↔ GSAP CustomEase — паритет.
-- `Hero`  →  `HeroNetwork` (lazy)  →  `network/LivingNetwork`  →  `network/{config, shaders, simulation}`.
+- `app/layout.tsx`  →  `system/LiveSystem` (fixed-слой за ВСЕЙ страницей, не в герое)  →  `useSceneDriver()`
+  (драйвер сцен для сети и хедера) + `SystemField` (dynamic ssr:false, r3f Canvas; монтаж отложен через
+  requestIdleCallback)  →  `network/{config, shaders, simulation}`.
   Сеть слушает курсор на **window** (канвас `pointer-events:none`) — поэтому скролл и клики по CTA свободны.
 
 **ГДЕ ЧТО КРУТИТЬ (чтобы не метаться по коду):**
@@ -157,7 +161,7 @@ slk-labs/
 - Один WebGL-canvas на весь сайт (v7: фиксированный за контентом, не per-section), ленивый. tokens.css — единственный источник правды.
 - Контент отделён от логики и в живой системе: `lib/scenes.ts` — ДАННЫЕ, `simulation.ts` — физика, `SystemField` — рендер. Не смешивать.
 - Активная сцена — только через `scene-store` (его читают и сеть, и хедер). Второй источник «где страница» не плодить.
-- Живая сеть = **three/r3f/drei** (по локу). tsParticles НЕ использовать (был откатан).
+- Живая сеть = **three/r3f** (по локу, без drei). tsParticles НЕ использовать (был откатан).
 
 ---
 
@@ -169,15 +173,17 @@ slk-labs/
 > **Статус (2026-06-26): фазы 0–3 реализованы на стартовых значениях.** Каркас + дизайн-система +
 > все секции (hero / works / services / manifesto / contact) + живая сеть на r3f. `npm run build`
 > зелёный, статический пререндер. Осталось: фаза 4 (AI-ассистент, нужен серверный ключ), фаза 5
-> (реальные кейсы, work/[slug], деплой) и подстановка финальных токенов из Design.
-> Деплой/линковку Vercel выполняет владелец.
+> (реальные кейсы, work/[slug]) и подстановка финальных токенов из Design.
+> Прод — GitHub Pages: push в `main` → `.github/workflows/deploy.yml`
+> (`GH_PAGES=true npm run build` → `out/` → `actions/deploy-pages`).
 
-**Фаза 0 — Каркас + ранний деплой** ✅ _(код готов; git push + Vercel — за владельцем)_
+**Фаза 0 — Каркас + ранний деплой** ✅ _(прод — GitHub Pages)_
 - `create-next-app` (App Router, TS, Tailwind v4), положить стартовый `tokens.css`, подключить шрифты.
 - Поднять Lenis + GSAP (зарегистрировать ScrollTrigger).
-- Инициализировать git, запушить в репозиторий, слинковать Vercel, задеплоить **пустую оболочку**.
-- Цель: «в проде с первого дня». Дальше каждый мерж = превью-деплой.
-- ⚠️ Авторизацию в GitHub/Vercel и линковку проекта делает **владелец** в своём окружении; агент не заводит
+- Деплой: push в `main` → `.github/workflows/deploy.yml` → `GH_PAGES=true npm run build` → `out/` →
+  `actions/deploy-pages` (basePath `/slk-labs-v7` в `next.config.ts`).
+- Проект остаётся на GitHub Pages, пока владелец сам не решит переносить (Vercel — вариант для фазы 4).
+- ⚠️ Авторизацию в GitHub и настройки Pages делает **владелец** в своём окружении; агент не заводит
   аккаунты, не вводит пароли/токены, не принимает OAuth-разрешения.
 
 **Фаза 1 — Дизайн-система и примитивы** ✅ _(старт-значения)_
@@ -198,6 +204,8 @@ slk-labs/
 - UI: узел системы, с которым говоришь; «мышление» = импульс по сети.
 - Серверный `app/api/assistant/route.ts` → Anthropic SDK. Ключ только серверный (`ANTHROPIC_API_KEY`),
   никогда не `NEXT_PUBLIC`, никогда не в клиенте.
+- ⚠️ Route handler несовместим со static export (GitHub Pages): фазе 4 понадобится серверный хостинг
+  (например Vercel) — переезд только по явному решению владельца.
 
 **Фаза 5 — Контент и полировка → запуск**
 - Реальные кейсы вместо плейсхолдеров; бюджет производительности, мобильный проход, a11y, SEO, OG-метаданные.
@@ -236,26 +244,25 @@ slk-labs/
 # Фаза 0
 npx create-next-app@latest slk-labs --typescript --app --tailwind --eslint
 cd slk-labs
-npm i gsap lenis split-type three @react-three/fiber @react-three/drei
+npm i gsap lenis split-type three @react-three/fiber
 npm i @anthropic-ai/sdk            # понадобится в фазе 4
 
 npm run dev                        # локальная разработка
 npm run build && npm run start     # прод-сборка локально
 
-# Деплой (авторизацию выполняет владелец)
-git init && git add -A && git commit -m "scaffold"   # → запушить в репозиторий
-npx vercel        # превью-деплой
-npx vercel --prod # прод
+# Деплой — GitHub Pages (авторизацию выполняет владелец)
+git push origin main   # → .github/workflows/deploy.yml: GH_PAGES=true npm run build → out/ → Pages
+# прод: https://msheyhov1.github.io/slk-labs-v7/
 ```
 
-**ENV** (фаза 4): `ANTHROPIC_API_KEY` — в `.env.local` и в Vercel Project Settings → Environment Variables.
-Только серверный. В клиент не попадает.
+**ENV** (фаза 4): `ANTHROPIC_API_KEY` — в `.env.local` и в env серверного хостинга фазы 4 (например
+Vercel; на GitHub Pages серверных ENV нет — static export). Только серверный. В клиент не попадает.
 
 ---
 
 ## Открытые пункты (на подтверждение владельца)
 
-1. Репозиторий + Vercel — считаю существующими; если нет, завести до фазы 0.
+1. Хостинг: прод — GitHub Pages; переезд (например на Vercel под фазу 4) — только по решению владельца.
 2. AI-ассистент — поставлен фазой 4; если нужен раньше, поднять приоритет.
 3. Кейсы — три плейсхолдера выше; подтвердить состав и что публикуемо.
 ```

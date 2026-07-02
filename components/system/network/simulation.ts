@@ -231,7 +231,7 @@ export class NetworkSimulation {
         if (pointer.active) {
           const dx = pointer.x - x;
           const dy = pointer.y - y;
-          const d = Math.hypot(dx, dy) || 1;
+          const d = Math.sqrt(dx * dx + dy * dy) || 1;
           if (d < R) {
             const ux = dx / d;
             const uy = dy / d;
@@ -252,7 +252,9 @@ export class NetworkSimulation {
         for (let s = 0; s < waves.length; s++) {
           const w = waves[s];
           const radius = w.t * minDim * C.wave.speed;
-          const off = Math.abs(Math.hypot(x - w.x, y - w.y) - radius);
+          const wdx = x - w.x;
+          const wdy = y - w.y;
+          const off = Math.abs(Math.sqrt(wdx * wdx + wdy * wdy) - radius);
           if (off < waveBand) {
             const k = (1 - off / waveBand) * (1 - w.t / C.wave.life);
             h = Math.max(h, k * C.wave.nodeHeat);
@@ -270,7 +272,7 @@ export class NetworkSimulation {
         pos[ix] = x;
         pos[ix + 1] = y;
 
-        h = Math.max(h, Math.min(1, Math.hypot(vx, vy) * 0.12));
+        h = Math.max(h, Math.min(1, Math.sqrt(vx * vx + vy * vy) * 0.12));
       } else {
         pos[ix] = bx;
         pos[ix + 1] = by;
@@ -300,7 +302,7 @@ export class NetworkSimulation {
         if (vj < 0.04) continue;
         const dx = pos[i * 3] - pos[j * 3];
         const dy = pos[i * 3 + 1] - pos[j * 3 + 1];
-        const d = Math.hypot(dx, dy);
+        const d = Math.sqrt(dx * dx + dy * dy);
         if (d >= maxDist) continue;
 
         const al = 1 - d / maxDist;
@@ -316,7 +318,9 @@ export class NetworkSimulation {
           for (let s = 0; s < waves.length; s++) {
             const w = waves[s];
             const radius = w.t * minDim * C.wave.speed;
-            const off = Math.abs(Math.hypot(mx - w.x, my - w.y) - radius);
+            const wdx = mx - w.x;
+            const wdy = my - w.y;
+            const off = Math.abs(Math.sqrt(wdx * wdx + wdy * wdy) - radius);
             if (off < waveBand) {
               lw = Math.max(lw, (1 - off / waveBand) * (1 - w.t / C.wave.life) * C.wave.linkBoost);
             }
@@ -353,7 +357,9 @@ export class NetworkSimulation {
       const rayGate = 0.55 + 0.45 * dim;
       for (let i = 0; i < N && seg < this.maxSeg; i++) {
         if (vis[i] < 0.2) continue;
-        const d = Math.hypot(pos[i * 3] - px, pos[i * 3 + 1] - py);
+        const rdx = pos[i * 3] - px;
+        const rdy = pos[i * 3 + 1] - py;
+        const d = Math.sqrt(rdx * rdx + rdy * rdy);
         if (d >= R) continue;
         const alpha = (1 - d / R) * C.pointerRayOpacity * vis[i] * rayGate;
         const o = seg * 6;

@@ -5,12 +5,15 @@ import { Manifesto } from "@/components/sections/Manifesto";
 import { Contact } from "@/components/sections/Contact";
 
 export default function Home() {
+  // Contact (<footer>) — вне <main>: footer-потомок main теряет landmark contentinfo.
   return (
     <>
-      <Hero />
-      <Works />
-      <Services />
-      <Manifesto />
+      <main id="content">
+        <Hero />
+        <Works />
+        <Services />
+        <Manifesto />
+      </main>
       <Contact />
     </>
   );

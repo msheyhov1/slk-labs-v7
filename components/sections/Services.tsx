@@ -9,7 +9,7 @@ export function Services() {
       id="services"
       data-scene="services"
       aria-labelledby="services-title"
-      className="instrument py-[clamp(72px,10vw,128px)]"
+      className="instrument instrument-bridge py-[clamp(72px,10vw,128px)]"
     >
       <Container>
         <SectionHead index={servicesIntro.index} title={servicesIntro.title} titleId="services-title" />

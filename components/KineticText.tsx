@@ -8,6 +8,11 @@ import { motion } from "@/lib/motion";
 /**
  * Кинетический текст: слова ОСЕДАЮТ построчно по скроллу (грамматика «сборки»).
  * prefers-reduced-motion → обычный статичный текст.
+ *
+ * A11y: SplitType дробит текст на span-осколки, а GSAP держит их autoAlpha:0 до
+ * скролла — скринридер видел бы рваный/скрытый текст. Поэтому видимый (осколочный)
+ * слой скрыт от SR (aria-hidden), а рядом лежит sr-only копия целой фразы —
+ * aria-label здесь не годится: на role=paragraph он запрещён ARIA-спекой.
  */
 export function KineticText({
   as: Tag = "p",
@@ -60,7 +65,12 @@ export function KineticText({
     };
   }, [text, start]);
 
-  // ref пробрасывается в полиморфный элемент через createElement (DOM-ref, не доступ к .current)
-  // eslint-disable-next-line react-hooks/refs
-  return createElement(Tag, { ref, className }, text);
+  return createElement(
+    Tag,
+    { className },
+    <span className="sr-only">{text}</span>,
+    <span key="visual" ref={ref} aria-hidden className="block">
+      {text}
+    </span>,
+  );
 }

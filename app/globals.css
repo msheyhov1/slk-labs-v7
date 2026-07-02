@@ -101,9 +101,28 @@ html.js [data-reveal] { opacity: 0; }
   -webkit-backdrop-filter: blur(7px);
   backdrop-filter: blur(7px);
 }
+/* Мост тёмная→светлая: градиент-полоса НАД первой светлой секцией (в тёмной зоне),
+   чтобы стык substrate→панель читался как «просветление поля», а не вспышка.
+   Вешается точечно (Services), не на все .instrument — между двумя светлыми лишний. */
+.instrument-bridge { position: relative; }
+.instrument-bridge::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  transform: translateY(-100%);
+  height: clamp(48px, 8vw, 120px);
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--color-bone-glass-panel));
+}
+
 /* нет поддержки backdrop-filter → панели становятся плотнее (читаемость важнее эффекта) */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .instrument { background: var(--color-bone); }
   .tile-bone { background: var(--color-bone-sunken); }
   .tile-ink { background: var(--color-ink); }
+  .instrument-bridge::before {
+    background: linear-gradient(to bottom, transparent, var(--color-bone));
+  }
 }

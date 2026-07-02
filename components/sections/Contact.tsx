@@ -33,13 +33,13 @@ export function Contact() {
                 href={l.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-center justify-between gap-4 rounded-sm border border-hairline tile-bone px-[22px] py-[18px] no-underline transition-colors duration-[var(--dur-micro)] ease-standard hover:border-[color:var(--color-signal-ink)]"
+                className="group flex items-center justify-between gap-4 rounded-sm border border-hairline tile-bone px-[22px] py-[18px] no-underline transition-colors duration-[var(--dur-micro)] ease-standard hover:border-[color:var(--color-signal-ink)] active:border-[color:var(--color-signal-ink)]"
               >
                 <span className="flex flex-col gap-[6px]">
                   <MonoLabel tone="ink-2">{l.label}</MonoLabel>
                   <span className="text-[1.1rem] font-medium tracking-tight text-ink">{l.value}</span>
                 </span>
-                <span aria-hidden className="text-[1.2rem] text-signal-ink transition-transform duration-[var(--dur-micro)] ease-standard group-hover:-translate-y-[2px] group-hover:translate-x-[2px]">
+                <span aria-hidden className="text-[1.2rem] text-signal-ink transition-transform duration-[var(--dur-micro)] ease-standard group-hover:-translate-y-[2px] group-hover:translate-x-[2px] group-active:-translate-y-[2px] group-active:translate-x-[2px]">
                   ↗
                 </span>
               </a>

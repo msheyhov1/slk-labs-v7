@@ -50,6 +50,4 @@ export const SCENES: Record<SceneId, Scene> = {
   contact: { id: "contact", surface: "light", formation: "funnel", density: 0.82, breath: 0.55, linkDist: 0.96, dim: 0.68, foci: 1 },
 };
 
-export const SCENE_ORDER: SceneId[] = ["hero", "works", "services", "manifesto", "contact"];
-
 export const DEFAULT_SCENE: Scene = SCENES.hero;
